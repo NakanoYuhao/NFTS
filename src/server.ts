@@ -1,5 +1,6 @@
 import { createServer } from 'http';
 import { request as httpRequest } from 'http';
+import https from 'https';
 import { parse } from 'url';
 import next from 'next';
 
@@ -37,8 +38,7 @@ function proxyApi(req: import('http').IncomingMessage, res: import('http').Serve
   const headers = { ...req.headers };
   delete headers['host'];
 
-  const isHttps = BACKEND_IS_HTTPS;
-  const httpModule = isHttps ? require('https') : require('http');
+  const httpModule = BACKEND_IS_HTTPS ? https : { request: httpRequest };
 
   const options = {
     hostname: BACKEND_HOST,

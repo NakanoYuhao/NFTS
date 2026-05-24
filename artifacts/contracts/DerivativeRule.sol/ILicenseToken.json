@@ -1,0 +1,89 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "ILicenseToken",
+  "sourceName": "contracts/DerivativeRule.sol",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "licenseId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "holder",
+          "type": "address"
+        }
+      ],
+      "name": "isLicenseValid",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "to",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "originalContract",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "originalTokenId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "derivativeType",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "uint96",
+          "name": "royaltyBps",
+          "type": "uint96"
+        },
+        {
+          "internalType": "uint256",
+          "name": "maxSupply",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bool",
+          "name": "requireNfc",
+          "type": "bool"
+        },
+        {
+          "internalType": "uint256",
+          "name": "expireTime",
+          "type": "uint256"
+        }
+      ],
+      "name": "mintLicense",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x",
+  "deployedBytecode": "0x",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

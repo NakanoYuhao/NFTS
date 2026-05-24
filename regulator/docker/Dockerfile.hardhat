@@ -1,0 +1,22 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+RUN apk add --no-cache curl
+
+# 复制 Hardhat 配置、合约和部署脚本
+COPY hardhat.config.js ./
+COPY contracts/ ./contracts/
+COPY scripts/deploy/ ./scripts/deploy/
+COPY package.json ./
+
+# 安装依赖（包括 OpenZeppelin）
+RUN npm init -y 2>/dev/null; \
+    npm install --save-dev hardhat@^2 @nomicfoundation/hardhat-toolbox ethers @openzeppelin/contracts@^4
+
+# 编译所有合约
+RUN npx hardhat compile
+
+EXPOSE 8545
+
+CMD ["npx", "hardhat", "node", "--hostname", "0.0.0.0"]

@@ -1,0 +1,112 @@
+● 项目结构总结：OPEN-NFTs
+
+  这是一个基于 Next.js 16 (App Router) + shadcn/ui + Tailwind CSS
+  v4 的全栈 NFT 潮玩创作平台，使用 pnpm 管理依赖。
+
+  ---
+  目录结构
+
+  projects/
+  ├── contracts/OpenNFT.sol           # 极简 ERC-721 智能合约
+  ├── scripts/                        # 构建/启动/部署脚本
+  (build.sh, dev.sh等)
+  ├── public/                         # 静态资源 (SVG图标)
+  ├── .cozeproj/                      # 扣子编程平台配置 (design
+  doc, prototype)
+  ├── src/
+  │   ├── app/
+  │   │   ├── layout.tsx              # 根布局 (metadata,
+  ClientProviders)
+  │   │   ├── page.tsx                # SPA入口 — 状态机路由，按
+  currentPage 渲染不同页面
+  │   │   └── api/                    # 16个API路由
+  │   │       ├── nft/                # NFT铸造链 (mint, apply,
+  deploy, status, sync, indexer)
+  │   │       ├── storage/            # 存储CRUD (save, load, list,
+   delete, sync)
+  │   │       ├── chat/               # AI对话
+  │   │       ├── generate-content/   # AI生成潮玩内容
+  │   │       ├── generate-free/      # 自由创作模式AI生成
+  │   │       ├── generate-persona/   # 人格蒸馏 (女娲五层结构)
+  │   │       ├── generate-sprites/   # 生成藏品动画
+  │   │       └── upload-image/       # 图片上传
+  │   ├── components/
+  │   │   ├── HomePage.tsx            # 首页 — 大标题 + 两个主按钮
+  │   │   ├── CreatorPage.tsx         # 创作者页面 —
+  拍照/自由创作选择
+  │   │   ├── CreatePage.tsx          # 创作页面 — 支持 photo/free
+  两种模式
+  │   │   ├── CollectionPage.tsx      # 藏品柜 — 网格展示 +
+  链上同步
+  │   │   ├── DetailPage.tsx          # 藏品详情 —
+  图片+信息+对话入口
+  │   │   ├── ChatPage.tsx            # AI对话 — 人格驱动聊天
+  │   │   ├── NftApplyPage.tsx        # NFT铸造申请页
+  │   │   ├── EnterprisePage.tsx      # 企业服务入口
+  │   │   ├── UserPage.tsx            # 用户页
+  │   │   └── ui/ (60+ shadcn组件)   # 完整的Radix UI组件库
+  │   ├── hooks/
+  │   │   ├── useAppStore.ts          # 全局状态
+  (Zustand-style纯hook)
+  │   │   ├── useNftSync.ts           # 链上NFT同步逻辑
+  │   │   └── use-mobile.ts           # 移动端检测
+  │   ├── lib/
+  │   │   ├── nft-contract.ts         # 合约交互 (ethers.js)
+  │   │   ├── nft-indexer.ts          # 链下索引器
+  (Alchemy/合约/Pinata)
+  │   │   ├── nft-metadata.ts         # ERC-721 元数据生成
+  │   │   ├── pinata.ts               # Pinata IPFS上传
+  │   │   ├── platform-wallet.ts      # 平台钱包管理
+  │   │   ├── web3-provider.tsx       # Wagmi + RainbowKit 配置
+  │   │   ├── prompts.ts              # AI System Prompt模板
+  │   │   ├── removeBackground.ts     # 图片去背
+  │   │   ├── storage/                # 存储适配器层
+  │   │   │   ├── onft-format.ts      # .onft v4格式
+  (Persona+Protocol+Image)
+  │   │   │   ├── storage-local.ts    # localStorage适配器
+  │   │   │   └── storage-server.ts   # 服务端适配器(预留)
+  │   │   └── utils.ts                # cn()工具函数
+  │   ├── types/index.ts              # Collectible, ChatMessage,
+  PageType 等类型定义
+  │   └── server.ts                   # 自定义服务端入口
+
+  ---
+  核心业务流程
+
+  1. 潮玩创作：拍照模式 (CreatePage photo) 或自由创作模式
+  (CreatePage free)，通过 AI (generate-content/generate-free)
+  生成潮玩的人格、故事、性格、外观等
+  2. .onft v4 打包：人格锚点 (persona) + Agentic Protocol
+  (personaProtocol) + 图片 → 打包为 .onft
+  二进制文件，生成独立的身份 JSON
+  3. AI 对话：基于人格蒸馏（女娲五层结构）的对话系统，藏品可作为 AI
+   角色与用户聊天
+  4. NFT 铸造：上传 .onft 到 IPFS (Pinata) → 生成 metadata → 调用
+  OpenNFT.sol 合约 safeMint 铸造 ERC-721
+  5. 链上同步：通过 Alchemy/合约索引器同步链上 .onft 格式 NFT
+  到本地藏品柜
+
+  技术栈
+
+  ┌────────┬───────────────────────────────────────────────────┐
+  │  类别  │                       技术                        │
+  ├────────┼───────────────────────────────────────────────────┤
+  │ 框架   │ Next.js 16.1.1 (App Router) + React 19.2          │
+  ├────────┼───────────────────────────────────────────────────┤
+  │ UI     │ shadcn/ui (Radix UI 全套) + Tailwind CSS v4       │
+  ├────────┼───────────────────────────────────────────────────┤
+  │ 区块链 │ ethers.js v6 + Wagmi v2 + RainbowKit v2 + Viem    │
+  ├────────┼───────────────────────────────────────────────────┤
+  │ 存储   │ Pinata IPFS + localStorage (适配器模式预留服务端) │
+  ├────────┼───────────────────────────────────────────────────┤
+  │ 数据库 │ Drizzle ORM + PostgreSQL (pg)                     │
+  ├────────┼───────────────────────────────────────────────────┤
+  │ 验证   │ Zod v4 + React Hook Form                          │
+  ├────────┼───────────────────────────────────────────────────┤
+  │ 包管理 │ pnpm 9+                                           │
+  └────────┴───────────────────────────────────────────────────┘
+
+  设计风格
+
+  清新简约的白色背景 + 绿松石色 (#14b8a6) 作为主色调 + 橙色
+  (#f97316) 作为次要色，圆角卡片、纯色按钮、充足留白。

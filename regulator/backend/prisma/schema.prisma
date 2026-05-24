@@ -1,0 +1,105 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Creator {
+  id           Int       @id @default(autoincrement())
+  address      String    @unique @db.VarChar(42)
+  did          String?   @unique @db.VarChar(200)
+  didHash      String?   @db.VarChar(66)
+  didCid       String?   @db.VarChar(100)
+  vcCid        String?   @db.VarChar(100)
+  isVerified   Boolean   @default(false)
+  registeredAt DateTime @default(now())
+
+  originalWorks OriginalWork[]
+  derivatives   Derivative[]
+  policies      Policy[]
+
+  @@index([address])
+  @@index([did])
+  @@map("creators")
+}
+
+model OriginalWork {
+  id               Int      @id @default(autoincrement())
+  tokenId          BigInt   @unique
+  contractAddress  String   @db.VarChar(42)
+  creatorAddress   String   @db.VarChar(42)
+  nfcChipUID       String?  @db.VarChar(200)
+  metadataCid      String   @db.VarChar(100)
+  artworkCid       String   @db.VarChar(100)
+  txHash           String   @db.VarChar(66)
+  status           String   @default("MINTED") @db.VarChar(20)
+  createdAt        DateTime @default(now())
+
+  creator     Creator @relation(fields: [creatorAddress], references: [address])
+  derivatives Derivative[]
+  policies    Policy[]
+
+  @@index([creatorAddress])
+  @@index([tokenId, contractAddress])
+  @@index([nfcChipUID])
+  @@map("original_works")
+}
+
+model Derivative {
+  id               Int      @id @default(autoincrement())
+  tokenId          BigInt
+  contractAddress  String   @db.VarChar(42)
+  originalTokenId  BigInt
+  creatorAddress   String   @db.VarChar(42)
+  derivativeType   String?  @db.VarChar(50)
+  metadataCid      String?  @db.VarChar(100)
+  artworkCid       String?  @db.VarChar(100)
+  nfcChipUID       String?  @db.VarChar(200)
+  txHash           String   @db.VarChar(66)
+  status           String   @default("MINTED") @db.VarChar(20)
+  createdAt        DateTime @default(now())
+
+  creator      Creator      @relation(fields: [creatorAddress], references: [address])
+  originalWork OriginalWork @relation(fields: [originalTokenId], references: [tokenId])
+
+  @@index([creatorAddress])
+  @@index([originalTokenId])
+  @@index([tokenId, contractAddress])
+  @@map("derivatives")
+}
+
+model Policy {
+  id               Int      @id @default(autoincrement())
+  originalTokenId  BigInt
+  creatorAddress   String   @db.VarChar(42)
+  ruleHash         String   @db.VarChar(66)
+  configJson       Json
+  txHash           String   @db.VarChar(66)
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+
+  creator      Creator      @relation(fields: [creatorAddress], references: [address])
+  originalWork OriginalWork @relation(fields: [originalTokenId], references: [tokenId])
+
+  @@index([originalTokenId])
+  @@index([creatorAddress])
+  @@map("policies")
+}
+
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  operator   String   @db.VarChar(42)
+  action     String   @db.VarChar(100)
+  target     String?  @db.VarChar(200)
+  txHash     String?  @db.VarChar(66)
+  detailJson Json?
+  createdAt  DateTime @default(now())
+
+  @@index([operator])
+  @@index([action])
+  @@index([createdAt(sort: Desc)])
+  @@map("audit_logs")
+}

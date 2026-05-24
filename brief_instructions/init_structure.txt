@@ -1,0 +1,147 @@
+OPEN-NFTs/
+├── .coze                          # Coze 平台配置（构建/运行）
+├── .cozeproj/                     # 项目脚手架
+│   ├── documents/plan.md          # 项目计划文档
+│   └── prototype/web/             # 设计原型
+│       ├── .canvas.json
+│       ├── _skeleton.html
+│       └── nft-apply.html         # NFT申请页原型
+├── .npmrc                         # pnpm 配置
+├── AGENTS.md                      # 项目开发规范
+├── DESIGN.md                      # 设计规范
+├── README.md
+├── components.json                # shadcn/ui 配置
+├── eslint.config.mjs              # ESLint 配置
+├── next-env.d.ts
+├── next.config.ts                 # Next.js 配置
+├── package.json
+├── pnpm-lock.yaml
+├── postcss.config.mjs             # PostCSS 配置
+├── tsconfig.json
+│
+├── contracts/                     # 智能合约
+│   └── OpenNFT.sol                # ERC-721 NFT 合约
+│
+├── scripts/                       # 构建 & 启动脚本
+│   ├── build.sh                   # 生产构建
+│   ├── deploy-contract.ts         # 合约部署脚本
+│   ├── dev.sh                     # 开发环境启动
+│   ├── prepare.sh                 # 预处理
+│   ├── start.sh                   # 生产启动
+│   └── validate.sh                # 校验脚本
+│
+├── public/                        # 静态资源
+│   ├── file.svg
+│   ├── globe.svg
+│   ├── next.svg
+│   ├── vercel.svg
+│   └── window.svg
+│
+└── src/                           # 源码根目录
+    │
+    ├── app/                       # Next.js App Router
+    │   ├── favicon.ico
+    │   ├── globals.css            # 全局样式 (Tailwind)
+    │   ├── layout.tsx             # 根布局 (Web3 Provider)
+    │   ├── page.tsx               # 入口页面 (SPA 路由)
+    │   └── robots.ts             # SEO robots
+    │
+    ├── app/api/                   # 后端 API Routes
+    │   ├── chat/route.ts          # 潮玩AI对话 (DeepSeek)
+    │   ├── generate-content/route.ts  # 万物潮玩内容生成
+    │   ├── generate-free/route.ts     # 自由创作内容生成
+    │   ├── generate-persona/route.ts  # 潮玩人设生成
+    │   ├── generate-sprites/route.ts  # 潮玩图片生成 (豆包SeeDream)
+    │   ├── upload-image/route.ts      # 图片上传S3
+    │   │
+    │   ├── nft/                   # NFT 相关接口
+    │   │   ├── apply/route.ts     # NFT-ID 申请
+    │   │   ├── deploy/route.ts    # 合约部署
+    │   │   ├── indexer/route.ts   # 索引器状态查询
+    │   │   ├── mint/route.ts      # NFT 铸造 (平台钱包付Gas)
+    │   │   ├── status/route.ts    # 铸造状态查询
+    │   │   └── sync/route.ts      # 链上同步 (全量+增量)
+    │   │
+    │   └── storage/               # 存储接口
+    │       ├── delete/route.ts    # 删除
+    │       ├── list/route.ts      # 列表
+    │       ├── load/route.ts      # 加载
+    │       ├── save/route.ts      # 保存
+    │       └── sync/route.ts      # 同步
+    │
+    ├── components/                # 页面组件 (SPA 视图)
+    │   ├── ChatPage.tsx           # 潮玩对话页
+    │   ├── ClientProviders.tsx    # 客户端 Provider 包裹
+    │   ├── CollectionPage.tsx     # 藏品柜页
+    │   ├── CreatePage.tsx         # 创作页 (万物潮玩+自由创作)
+    │   ├── CreatorPage.tsx        # 创作者主页
+    │   ├── DetailPage.tsx         # 藏品详情页
+    │   ├── EnterprisePage.tsx     # 企业版页面
+    │   ├── FontPreload.tsx        # 字体预加载
+    │   ├── HomePage.tsx           # 首页
+    │   ├── NftApplyPage.tsx       # NFT-ID 申请页
+    │   ├── PlaceholderPage.tsx    # 占位页面
+    │   │
+    │   └── ui/                    # shadcn/ui 组件库 (55个)
+    │       ├── accordion.tsx
+    │       ├── alert-dialog.tsx
+    │       ├── alert.tsx
+    │       ├── avatar.tsx
+    │       ├── badge.tsx
+    │       ├── button.tsx
+    │       ├── card.tsx
+    │       ├── dialog.tsx
+    │       ├── dropdown-menu.tsx
+    │       ├── input.tsx
+    │       ├── label.tsx
+    │       ├── progress.tsx
+    │       ├── scroll-area.tsx
+    │       ├── select.tsx
+    │       ├── sheet.tsx
+    │       ├── skeleton.tsx
+    │       ├── spinner.tsx
+    │       ├── tabs.tsx
+    │       ├── textarea.tsx
+    │       ├── tooltip.tsx
+    │       └── ... (更多UI组件)
+    │
+    ├── hooks/                     # 自定义 Hooks
+    │   ├── useAppStore.ts         # 全局状态管理 (Zustand)
+    │   ├── useNftSync.ts          # 链上NFT同步
+    │   └── use-mobile.ts          # 移动端检测
+    │
+    ├── lib/                       # 工具库
+    │   ├── nft-contract.ts        # NFT合约交互 (viem)
+    │   ├── nft-indexer.ts         # 链下索引器 (Alchemy)
+    │   ├── nft-metadata.ts        # ERC-721 元数据生成
+    │   ├── pinata.ts              # IPFS上传 (Pinata)
+    │   ├── platform-wallet.ts     # 平台钱包 (Gas代付)
+    │   ├── prompts.ts             # AI提示词集中管理
+    │   ├── removeBackground.ts    # 图片透明化处理
+    │   ├── utils.ts               # 通用工具 (cn等)
+    │   ├── web3-provider.tsx      # Wagmi+RainbowKit配置
+    │   │
+    │   └── storage/               # 存储适配器
+    │       ├── index.ts           # 统一存储接口
+    │       ├── onft-format.ts     # .onft 格式打包/解包
+    │       ├── storage-local.ts   # localStorage 适配器
+    │       └── storage-server.ts  # 服务端适配器 (预留)
+    │
+    └── types/
+        └── index.ts               # 全局类型定义 (Collectible等)
+
+
+
+
+
+
+结构概要：
+模块	文件数	说明
+API Routes	12	AI 生成 (4) + NFT (6) + 存储 (5) + 上传 (1)
+页面组件	11	首页 / 创作 / 藏品柜 / 详情 / 对话 / NFT 申请等
+shadcn/ui	55	完整预装组件库
+Hooks	3	状态管理、链上同步、移动端检测
+Lib	13	Web3 / 合约 / 索引器 / IPFS / 存储 / 提示词等
+合约	1	ERC-721 OpenNFT
+脚本	6	构建 / 启动 / 部署 / 校验
+项目采用 Next.js App Router 全栈架构，前端通过 SPA 状态管理模拟多页面切换，后端 API Routes 提供 AI 生成、NFT 铸造、存储等服务。Web3 层通过 Wagmi + RainbowKit 连接钱包，平台钱包代付 Gas 铸造 NFT 到用户地址，元数据通过 Pinata 上传 IPFS。

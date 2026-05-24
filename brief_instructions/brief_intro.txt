@@ -1,0 +1,431 @@
+OPEN-NFTs 项目全面总结
+一、项目定位
+OPEN-NFTs 是一个 NFT 潮玩创作平台，核心功能是让用户通过 AI 辅助创建独一无二的数字潮玩藏品，与藏品进行人格化对话，并为其申请链上唯一身份认证。
+二、技术选型
+层次	技术	版本	说明
+框架	Next.js (App Router)	16	全栈框架，API Routes 做后端代理
+核心	React	19	组件化开发
+语言	TypeScript	5	strict 模式，无隐式 any
+UI	shadcn/ui (Radix UI)	—	60+ 组件，位于 src/components/ui/
+样式	Tailwind CSS	4	白底 + 绿松石 / 橙色主题
+AI SDK	coze-coding-dev-sdk	—	统一封装 LLM、图片生成、S3 存储
+运行时	Node.js	24	沙箱环境预置
+包管理	pnpm	—	严禁 npm/yarn
+端口	5000	—	统一端口，HMR 热更新
+三、页面结构与导航
+主页 (HomePage)
+│  居中: "OPEN-NFTs" 标题
+│  横排: [创作者模式] [企业模式]
+│
+├──► 创作者页面 (CreatorPage)
+│    │  横排: [万物潮玩(大)] [自由创作(小)]
+│    │  左上: ← 返回
+│    │  底部导航: 创作 | 藏品柜 | 用户
+│    │
+│    ├──► 创作页面 (CreatePage, mode=photo)
+│    │     拍照上传 + 输入名称/介绍
+│    │     → AI生成 appearance/story/character
+│    │     → 用户编辑润色
+│    │     → AI生成 sprites(图生图) + persona
+│    │     → 保存藏品
+│    │
+│    ├──► 创作页面 (CreatePage, mode=free)
+│    │     输入名称/介绍
+│    │     → [AI补全] 按钮生成 appearance/story/character
+│    │     → 用户编辑
+│    │     → AI生成 sprites(文生图) + persona
+│    │     → 保存藏品
+│    │
+│    └──► 藏品柜 (CollectionPage)
+│         │  响应式网格 (2/3/4-6列)
+│         │  右上: [导入藏品] 按钮
+│         │  左上: ← 返回
+│         │
+│         └──► 藏品详情 (DetailPage)
+│              │  上半: 图片展示 (棋盘格背景+透明图)
+│              │  下半: intro / appearance / story / character
+│              │  底部: [进入对话] [申请NFT-ID] [导出.onft]
+│              │  左上: ← 返回
+│              │
+│              ├──► 对话页面 (ChatPage)
+│              │     聊天栏 + 文本输入
+│              │     用户气泡 teal, AI气泡灰色
+│              │     左上: ← 返回
+│              │
+│              └──► 申请NFT-ID → /api/nft/apply
+│
+└──► 企业页面 (EnterprisePage)
+     [防炒作服务] [生成IP服务] → PlaceholderPage (留空)
+页面类型枚举 (PageType)：home | creator | create-photo | create-free | collection | detail | chat | enterprise | anti-hype | generate-ip | apply-nft
+导航机制：SPA 单页应用，通过 useAppStore 中的 currentPage 状态 + div 显示 / 隐藏模拟页面切换，无 URL 路由。
+四、核心数据结构
+Collectible（藏品）
+interface Collectible {
+  id: string;                          // 唯一标识
+  metadata: {
+    createdAt: string;                  // 创作时间
+    author: string;                     // 作者
+  };
+  name: string;                        // 名称
+  intro: string;                       // 一句话介绍
+  appearance?: string;                 // 外表描述（次要数据）
+  story: string;                       // 背景故事（次要数据）
+  character: string;                   // 性格特征（次要数据）
+  sprites: string;                     // 藏品图片URL（S3，关键数据）
+  persona: string;                     // 人格锚点（关键数据，对话核心依据）
+  memory: string[];                    // 对话记忆（关键数据）
+  nftStatus?: NftStatus;              // NFT申请状态
+  nftId?: string;                      // NFT-ID编号
+  nftApplyTime?: string;              // 申请时间
+  nftTxHash?: string;                  // 链上交易哈希（预留）
+  nftBlockNumber?: number;            // 区块号（预留）
+}
+三类关键数据：sprites（藏品动画 / 图片）、persona（人格锚点）、memory（对话记忆）
+三类次要数据：intro（一句话介绍）、story（背景故事）、character（性格特征）
+数据关系：persona 是由 AI 根据 appearance + story + character 三项生成的深度人格画像摘要。对话时 LLM 仅读取 persona，不直接读取 story/character。
+NftStatus 状态枚举
+none → pending_audit → approved → minted
+                        ↓
+                     rejected → (可重新申请)
+ChatMessage
+interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: string;
+}
+五、AI 模型与接口
+5.1 模型分配
+场景	模型 ID	思考模式	说明
+万物潮玩文本生成	doubao-seed-2-0-pro-260215	thinking: enabled	旗舰多模态，理解图片 + 深度推理
+万物潮玩降级	doubao-seed-1-8-251228	thinking: enabled	旗舰失败时的降级方案
+自由创作 AI 补全	doubao-seed-1-8-251228	thinking: enabled	多模态模型补全内容
+人格锚点生成	doubao-seed-1-8-251228	thinking: enabled	深度思考生成 persona
+藏品图片生成	豆包 SeeDream	—	文生图 / 图生图，2K 分辨率
+对话模式	deepseek-v3-2-251201	thinking: disabled	非深度思考，快速对话响应
+5.2 API 接口清单（13 个）
+已实现的接口（8 个）
+#	接口	方法	功能	请求参数	AI 模型
+1	/api/generate-content	POST	万物潮玩：AI 根据照片 + 名称 + 介绍生成文本	FormData: image(File), name, intro	doubao-seed-2-0-pro
+2	/api/generate-free	POST	自由创作：AI 根据名称 + 介绍补全内容	{ name, intro }	doubao-seed-1-8
+3	/api/generate-sprites	POST	生成藏品图片（文生图 / 图生图）	{ name, intro, appearance, story, character, imageUrl? }	豆包 SeeDream
+4	/api/generate-persona	POST	AI 根据外表 + 故事 + 性格生成人格锚点	{ appearance, story, character }	doubao-seed-1-8
+5	/api/chat	POST	与潮玩对话	{ message, persona, memory, history }	deepseek-v3
+6	/api/upload-image	POST	上传图片到 S3	FormData: image(File) 或 { imageDataUrl(base64) }	—
+7	/api/nft/apply	POST	申请 NFT-ID	{ collectibleId, collectibleData? }	— (预留)
+8	/api/nft/status	GET	查询 NFT 申请状态	?id=xxx	— (预留)
+预留接口（5 个）
+#	接口	方法	功能	状态
+9	/api/storage/save	POST	上传 .onft 文件到服务器	预留骨架，返回成功 + 提示
+10	/api/storage/load	GET	下载 .onft 文件	预留骨架
+11	/api/storage/list	GET	列出用户所有藏品	预留骨架
+12	/api/storage/delete	DELETE	删除服务端藏品	预留骨架
+13	/api/storage/sync	POST	本地↔服务端同步	预留骨架
+5.3 AI 调用流程详解
+万物潮玩（照片创建）
+用户拍照 + 输入 [名称, 介绍]
+        │
+        ▼
+① POST /api/upload-image (FormData: image=照片)
+   → S3Storage.uploadFile() → presignUrl(7天)
+   → 返回 { imageUrl: "https://s3.xxx/..." }
+        │
+        ▼
+② POST /api/generate-content (FormData: image=照片, name, intro)
+   内部流程：
+   a. 先将照片上传到S3获取HTTP URL（豆包LLM不接受data URI）
+   b. LLMClient.invoke([
+        { role: 'system', content: GENERATE_CONTENT_SYSTEM },
+        { role: 'user', content: [
+            { type: 'text', text: generateContentUser(name, intro) },
+            { type: 'image_url', url: s3Url }
+        ]}
+      ], { model: 'doubao-seed-2-0-pro', thinking: 'enabled' })
+   c. 旗舰模型失败 → 降级 doubao-seed-1-8
+   → 返回 { appearance, story, character }
+        │
+        ▼
+③ 用户编辑/润色 appearance / story / character
+        │
+        ▼
+④ 并行调用两个API：
+   ┌─ POST /api/generate-sprites
+   │  { name, intro, appearance, story, character, imageUrl(原始照片S3 URL) }
+   │  → ImageGenClient.generate({
+   │       prompt: generateSpritesPromptFromImage(name,intro,appearance,story,character),
+   │       image: imageUrl,    ← 图生图：参考原始照片
+   │       size: '2K'
+   │    })
+   │  → removeWhiteBackground(spritesUrl) → PNG dataURL
+   │  → POST /api/upload-image ({ imageDataUrl }) → S3 URL
+   │  → 返回 sprites S3 URL
+   │
+   └─ POST /api/generate-persona
+      { appearance, story, character }
+      → LLMClient.invoke([
+           { role: 'system', content: GENERATE_PERSONA_SYSTEM },
+           { role: 'user', content: generatePersonaUser(appearance, story, character) }
+         ], { model: 'doubao-seed-1-8', thinking: 'enabled' })
+      → 返回 persona 文本
+        │
+        ▼
+⑤ 构造 Collectible 对象 → localStorage.setItem()
+自由创作
+用户输入 [名称, 介绍]
+        │
+        ▼
+① (可选) 点击"AI补全" → POST /api/generate-free { name, intro }
+   → LLMClient.invoke([system + user], { model: 'doubao-seed-1-8', thinking: 'enabled' })
+   → 返回 { appearance, story, character }
+        │
+        ▼
+② 用户编辑
+        │
+        ▼
+③ 并行调用（同万物潮玩④，但 generate-sprites 无 imageUrl 参数）
+   → ImageGenClient.generate({
+        prompt: generateSpritesPromptTextOnly(name,intro,appearance,story,character),
+        size: '2K'        ← 纯文生图
+     })
+   → 透明化 → 上传S3
+   + generate-persona
+        │
+        ▼
+④ 保存到 localStorage
+对话模式
+POST /api/chat { message, persona, memory, history }
+        │
+        ▼
+① 构造消息列表：
+   [
+     { role: 'system', content: chatSystemPrompt(persona, memory) },
+     ...history(当前会话上下文),
+     { role: 'user', content: message }
+   ]
+        │
+        ▼
+② LLMClient.invoke(messages, {
+     model: 'deepseek-v3-2-251201',
+     thinking: 'disabled',        ← 非深度思考，快速响应
+     temperature: 0.8
+   })
+        │
+        ▼
+③ 返回 AI 回复 → 存入 memory[]
+六、提示词外置管理
+所有 AI 提示词集中在 src/lib/prompts.ts，运行时从该文件读取。修改提示词只需编辑此文件。
+编号	导出名	用途	模板参数
+1	GENERATE_CONTENT_SYSTEM + generateContentUser(name, intro)	万物潮玩文本生成	name, intro
+2	GENERATE_FREE_SYSTEM + generateFreeUser(name, intro)	自由创作 AI 补全	name, intro
+3a	generateSpritesPromptTextOnly(name, intro, appearance, story, character)	纯文生图提示词	5 项全部
+3b	generateSpritesPromptFromImage(name, intro, appearance, story, character)	图生图提示词	5 项全部 + "必须以参考图片为原型"
+3	generateSpritesPrompt(name, intro, appearance, story, character, hasImage)	兼容入口，根据 hasImage 选择 3a/3b	+ hasImage
+4	GENERATE_PERSONA_SYSTEM + generatePersonaUser(appearance, story, character)	人格锚点生成	appearance, story, character
+5	chatSystemPrompt(persona, memory?)	对话模式系统提示	persona + 最近 20 条 memory
+6	FALLBACK_CONTENT / FALLBACK_PERSONA / FALLBACK_SPRITES_PROMPT	错误降级	—
+特殊要求：3a/3b 的图片提示词中包含 "背景必须是纯白色 (#FFFFFF)" 强制要求，为后续白色背景透明化做准备。
+七、图片透明化处理（方案 B）
+src/lib/removeBackground.ts
+原理：豆包生图时提示词要求纯白色背景 → 前端 Canvas 容差透明化
+算法：
+加载图片到 Canvas，获取 ImageData
+第一遍扫描：计算每个像素与纯白 (255,255,255) 的 RGB 欧氏距离
+dist ≤ tolerance(30) → 标记为完全透明 (mask=1)
+tolerance < dist ≤ tolerance + featherRadius*10 → 线性过渡部分透明
+第二遍扫描：从透明像素向 featherRadius(2px) 范围内的非透明像素扩散羽化
+输出 PNG dataURL（保留 alpha 通道）
+后续处理：透明化后的 PNG dataURL 上传到 S3，localStorage 只存 S3 URL。
+展示：DetailPage / CollectionPage 中图片使用棋盘格背景（灰白交替）可视化透明区域。
+八、数据存储体系
+8.1 当前架构：localStorage + S3
+┌──────────────────────────────────────────────────────┐
+│  localStorage                                         │
+│  key: "open-nfts-collectibles"                        │
+│  value: JSON.stringify(Collectible[])                 │
+│  ├─ 元数据字段 (id, name, intro, appearance, ...)     │
+│  ├─ sprites: "https://s3.xxx/.../sprites.png"         │ ← 仅存S3 URL
+│  ├─ persona: "人格锚点文本..."                          │
+│  ├─ memory: ["用户消息1", "AI回复1", ...]               │
+│  └─ nftStatus, nftId, ...                             │
+├──────────────────────────────────────────────────────┤
+│  S3 对象存储 (coze-coding-dev-sdk S3Storage)           │
+│  ├─ collectibles/{ts}_{random}.jpg   ← 原始照片       │
+│  └─ collectibles/{ts}_{random}.png   ← 透明化后图片    │
+│  签名URL有效期: 7天                                     │
+└──────────────────────────────────────────────────────┘
+8.2 .onft 打包格式（已实现，本地导出 / 导入可用）
+src/lib/storage/onft-format.ts
+┌──────────────────────────────────────────┐
+│  Header (固定 64 bytes)                   │
+│  ├─ Magic: "ONFT" (4 bytes)              │ ← 文件标识
+│  ├─ Version: uint16 (2 bytes)            │ ← 格式版本号，当前 1
+│  ├─ JSON Length: uint32 (4 bytes)         │ ← 元数据JSON长度
+│  ├─ Image Length: uint32 (4 bytes)        │ ← 图片数据长度
+│  └─ Reserved: (54 bytes)                 │ ← 预留扩展
+├──────────────────────────────────────────┤
+│  JSON Payload (变长)                      │
+│  └─ Collectible 对象（不含 sprites URL）  │ ← 元数据
+├──────────────────────────────────────────┤
+│  Image Payload (变长)                     │
+│  └─ 透明化后的 PNG 二进制数据              │ ← 藏品图像
+└──────────────────────────────────────────┘
+工具函数：
+packOnft(json, pngBuffer) → Blob：打包
+unpackOnft(buffer) → { json, pngBuffer }：完整解包
+readOnftMeta(buffer) → json：仅读取元数据，不解图片
+8.3 存储适配器架构
+src/lib/storage/index.ts
+type STORAGE_MODE = 'local' | 'server';
+
+interface StorageAdapter {
+  save(collectible: Collectible): Promise<void>;
+  load(id: string): Promise<Collectible | null>;
+  loadAll(): Promise<Collectible[]>;
+  delete(id: string): Promise<void>;
+  exportOnft(collectible: Collectible): Promise<Blob>;    // 导出 .onft 下载
+  importOnft(file: File): Promise<Collectible>;            // 从 .onft 导入
+}
+
+// createStorageAdapter(mode) → LocalStorageAdapter | ServerStorageAdapter
+适配器	文件	状态
+LocalStorageAdapter	storage-local.ts	✅ 完整实现
+ServerStorageAdapter	storage-server.ts	❌ 预留骨架，调用 /api/storage/*
+8.4 Quota 保护机制
+useAppStore.ts 的 saveCollectibles：
+尝试 localStorage.setItem()
+失败 → 清理 sprites 中的 data URL → 重试
+仍失败 → localStorage.removeItem() 清空
+九、NFT-ID 预留接口
+申请接口 (/api/nft/apply)
+// 请求
+POST { collectibleId: string, collectibleData?: Collectible }
+
+// 当前响应（模拟）
+{
+  success: true,
+  data: {
+    nftId: "NFT-MPI4YG4X-GD91",        // 模拟NFT-ID
+    status: "pending_audit",
+    audit: { submittedAt, status: "pending" },
+    blockchain: { txHash, blockNumber, contractAddress, tokenId, mintedAt }
+  }
+}
+预留对接点：
+数据上传审核系统：验证数据完整性、原创性、合规性
+区块链唯一认证系统：铸造 NFT、写入元数据哈希、链上存证
+状态查询 (/api/nft/status)
+GET ?id=xxx
+// 返回 { status, audit, blockchain }
+预留对接点：
+审核系统状态查询
+链上认证查询
+前端状态展示
+DetailPage 按钮文案随 nftStatus 变化：
+状态	按钮文案	可点击
+none / rejected	"申请 NFT-ID 身份证"	✅
+pending_audit	"审核中..."	❌
+approved	"铸造中..."	❌
+minted	"已认证 ✓"	❌
+十、文件目录总览
+src/
+├── app/
+│   ├── api/
+│   │   ├── chat/route.ts                 # 对话API (deepseek-v3)
+│   │   ├── generate-content/route.ts     # 万物潮玩文本 (doubao-seed-2-0-pro 多模态)
+│   │   ├── generate-free/route.ts        # 自由创作补全 (doubao-seed-1-8)
+│   │   ├── generate-persona/route.ts     # 人格锚点 (doubao-seed-1-8)
+│   │   ├── generate-sprites/route.ts     # 藏品图片 (豆包SeeDream 图生图/文生图)
+│   │   ├── nft/
+│   │   │   ├── apply/route.ts            # NFT-ID申请（预留）
+│   │   │   └── status/route.ts           # NFT状态查询（预留）
+│   │   ├── storage/
+│   │   │   ├── save/route.ts             # 上传.onft（预留）
+│   │   │   ├── load/route.ts             # 下载.onft（预留）
+│   │   │   ├── list/route.ts             # 列出藏品（预留）
+│   │   │   ├── delete/route.ts           # 删除藏品（预留）
+│   │   │   └── sync/route.ts             # 本地↔服务端同步（预留）
+│   │   └── upload-image/route.ts         # 图片上传S3
+│   ├── globals.css                       # 全局样式
+│   ├── layout.tsx                        # 根布局
+│   └── page.tsx                          # SPA主入口（路由+状态）
+├── components/
+│   ├── ui/                               # shadcn/ui 组件库（60+组件）
+│   ├── ChatPage.tsx                      # 对话页面
+│   ├── CollectionPage.tsx                # 藏品柜（含导入.onft按钮）
+│   ├── CreatePage.tsx                    # 创作页（万物潮玩+自由创作双模式）
+│   ├── CreatorPage.tsx                   # 创作者主页
+│   ├── DetailPage.tsx                    # 藏品详情（含导出.onft按钮）
+│   ├── EnterprisePage.tsx                # 企业模式
+│   ├── FontPreload.tsx                   # 字体预加载
+│   ├── HomePage.tsx                      # 首页
+│   └── PlaceholderPage.tsx               # 占位页
+├── hooks/
+│   └── useAppStore.ts                    # 全局状态管理
+├── lib/
+│   ├── prompts.ts                        # ★ AI提示词外置配置（6组）
+│   ├── removeBackground.ts              # 白色背景容差透明化工具
+│   ├── storage/
+│   │   ├── onft-format.ts               # ★ .onft二进制格式打包/解包
+│   │   ├── storage-local.ts             # 本地存储适配器（完整实现）
+│   │   ├── storage-server.ts            # 服务端存储适配器（预留骨架）
+│   │   └── index.ts                     # 统一接口 + 模式切换
+│   └── utils.ts                          # cn() 工具函数
+└── types/
+    └── index.ts                          # 类型定义
+十一、外部依赖接入方式
+11.1 LLM (coze-coding-dev-sdk)
+import { LLMClient, Config, HeaderUtils } from 'coze-coding-dev-sdk';
+
+const config = new Config();
+const customHeaders = HeaderUtils.extractForwardHeaders(request.headers);
+const client = new LLMClient(config, customHeaders);
+
+// 文本生成
+const response = await client.invoke(messages, {
+  model: 'doubao-seed-2-0-pro-260215',
+  thinking: 'enabled',
+  temperature: 0.8,
+});
+
+// 多模态（图片理解）
+const messages = [
+  { role: 'system', content: '...' },
+  { role: 'user', content: [
+    { type: 'text', text: '...' },
+    { type: 'image_url', url: 'https://s3.xxx/...' }  // 必须HTTP URL，不接受data URI
+  ]}
+];
+11.2 图片生成 (coze-coding-dev-sdk)
+import { ImageGenClient, Config, HeaderUtils } from 'coze-coding-dev-sdk';
+
+const config = new Config();
+const client = new ImageGenClient(config, customHeaders);
+
+// 文生图
+const result = await client.generate({ prompt: '...', size: '2K' });
+
+// 图生图（参考原始照片）
+const result = await client.generate({ prompt: '...', image: imageUrl, size: '2K' });
+11.3 S3 对象存储 (coze-coding-dev-sdk)
+import { S3Storage } from 'coze-coding-dev-sdk';
+
+const storage = new S3Storage({
+  endpointUrl: process.env.COZE_BUCKET_ENDPOINT_URL,
+  accessKey: '',
+  secretKey: '',
+  bucketName: process.env.COZE_BUCKET_NAME,
+  region: 'cn-beijing',
+});
+
+// 上传
+const key = await storage.uploadFile({ fileContent: buffer, fileName, contentType });
+
+// 获取签名URL
+const url = await storage.generatePresignedUrl({ key, expireTime: 7*24*3600 });
+十二、设计规范
+详见 DESIGN.md，核心要点：
+配色：白底 (#fff) + 绿松石 (teal-500 #14b8a6) + 橙色 (orange-500 #f97316)
+按钮：纯色背景 + 白色文字，禁止渐变
+卡片：白底 + 浅灰边框 + 悬停 teal 边框 + 圆角 2xl
+字体：Inter + 系统字体
+禁忌：禁止深色背景、渐变按钮、复杂装饰、文字 < 14px

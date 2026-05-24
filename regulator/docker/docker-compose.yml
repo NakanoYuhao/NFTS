@@ -1,0 +1,112 @@
+version: '3.8'
+
+# =============================================================================
+# NFC 二创监管平台 — 后端服务编排
+# 部署方式: docker compose --env-file .env.docker up -d
+# =============================================================================
+
+services:
+  # ==================== 数据库 ====================
+  postgres:
+    image: postgres:16-alpine
+    container_name: nfc-postgres
+    environment:
+      POSTGRES_USER: nfc_admin
+      POSTGRES_PASSWORD: nfc_platform_2024
+      POSTGRES_DB: nfc_registry
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nfc_admin -d nfc_registry"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ==================== 缓存 ====================
+  redis:
+    image: redis:7-alpine
+    container_name: nfc-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    restart: unless-stopped
+
+  # ==================== IPFS 节点 ====================
+  ipfs:
+    image: ipfs/kubo:latest
+    container_name: nfc-ipfs
+    ports:
+      - "4001:4001"
+      - "5001:5001"
+      - "8081:8080"
+    volumes:
+      - ipfs-data:/data/ipfs
+    command: >
+      daemon --enable-gc --enable-pubsub-experiment
+    restart: unless-stopped
+
+  # ==================== Hardhat 本地链 ====================
+  hardhat:
+    build:
+      context: ../../
+      dockerfile: regulator/docker/Dockerfile.hardhat
+    container_name: nfc-hardhat
+    ports:
+      - "8545:8545"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-s", "-X", "POST", "-H", "Content-Type: application/json", "--data", '{"jsonrpc":"2.0","method":"eth_chainId","params":[],"id":1}', "http://localhost:8545"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  # ==================== NestJS 后端 API ====================
+  backend:
+    build:
+      context: ../backend
+      dockerfile: ../docker/Dockerfile.backend
+    container_name: nfc-backend
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    environment:
+      - DATABASE_URL=postgresql://nfc_admin:nfc_platform_2024@postgres:5432/nfc_registry
+      - REDIS_URL=redis://redis:6379
+      - CHAIN_RPC=http://hardhat:8545
+      - IPFS_API=http://ipfs:5001
+      - IPFS_GATEWAY=http://ipfs:8080
+      - JWT_SECRET=${JWT_SECRET:-nfc-platform-jwt-secret-prod}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:5000}
+      - PLATFORM_PRIVATE_KEY=${PLATFORM_PRIVATE_KEY:-0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80}
+      - PLATFORM_ADDRESS=${PLATFORM_ADDRESS:-0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266}
+      - CONTRACT_CREATORREGISTRY=${CONTRACT_CREATORREGISTRY:-0x5FbDB2315678afecb367f032d93F642f64180aa3}
+      - CONTRACT_ORIGINALWORK=${CONTRACT_ORIGINALWORK:-0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512}
+      - CONTRACT_LICENSETOKEN=${CONTRACT_LICENSETOKEN:-0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0}
+      - CONTRACT_DERIVATIVENFT=${CONTRACT_DERIVATIVENFT:-0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9}
+      - CONTRACT_DERIVATIVERULE=${CONTRACT_DERIVATIVERULE:-0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9}
+      - CONTRACT_ROYALTYSPLITTER=${CONTRACT_ROYALTYSPLITTER:-0x5FC8d32690cc91D4c39d9d3abcBD16989F875707}
+      - CONTRACT_NFCSEALREGISTRY=${CONTRACT_NFCSEALREGISTRY:-0x0165878A594ca255338adfa4d48449f69242Eb8F}
+      # Pinata（可选）
+      - PINATA_JWT=${PINATA_JWT:-}
+      - PINATA_API_KEY=${PINATA_API_KEY:-}
+      - PINATA_SECRET_KEY=${PINATA_SECRET_KEY:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      ipfs:
+        condition: service_started
+      hardhat:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  redisdata:
+  ipfs-data:

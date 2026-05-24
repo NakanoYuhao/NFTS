@@ -1,0 +1,100 @@
+============================================================
+  NFC 潮玩二创监管平台 —— 环境准备指南
+============================================================
+
+一、必须安装的软件
+------------------------------------------------------------
+
+1. Node.js
+   下载：https://nodejs.org
+   版本：推荐 v20 LTS（v22+ 也可）
+   验证：打开终端运行 node --version
+
+2. PostgreSQL
+   下载：https://www.postgresql.org/download/
+   版本：16（或 15/14）
+   安装后创建数据库：
+     打开 pgAdmin 或终端执行：
+     CREATE DATABASE nfc_registry;
+     CREATE USER nfc_admin WITH SUPERUSER;
+     （本项目使用 trust 认证，无需密码）
+
+3. MetaMask 浏览器插件
+   下载：https://metamask.io
+   支持 Chrome / Firefox / Edge
+
+二、可选安装的软件（增强功能）
+------------------------------------------------------------
+
+4. Docker Desktop
+   下载：https://www.docker.com/products/docker-desktop
+   用途：IPFS 去中心化存储 + Redis 缓存
+   如果无法安装，项目会自动使用本地存储降级方案
+
+5. Git
+   下载：https://git-scm.com
+   用途：版本管理
+
+三、首次安装步骤（按顺序执行）
+------------------------------------------------------------
+
+第 1 步：打开终端（PowerShell），进入项目目录
+    cd final_project
+
+第 2 步：复制环境变量
+    copy backend\.env.example backend\.env
+
+    （如需修改数据库连接或端口，编辑 backend\.env）
+
+第 3 步：安装合约依赖
+    cd contracts
+    npm install
+    cd ..
+
+第 4 步：安装后端依赖 + 生成 Prisma Client
+    cd backend
+    npm install
+    npx prisma generate
+    cd ..
+
+第 5 步：安装前端依赖
+    cd frontend
+    npm install
+    cd ..
+
+第 6 步：创建数据库表
+    cd backend
+    npx prisma migrate dev --name init
+    cd ..
+
+    如果提示数据库不存在，先创建 nfc_registry 数据库。
+
+第 7 步：启动所有服务
+    powershell -ExecutionPolicy Bypass -File resume.ps1
+
+第 8 步：打开浏览器
+    访问 http://localhost:5173
+
+四、如果 Docker 不可用
+------------------------------------------------------------
+
+resume.ps1 会自动检测 Docker。如果 Docker 未安装或未运行：
+  - IPFS 上传会降级为本地存储（功能不受影响）
+  - Redis 缓存不可用（不影响核心功能）
+
+五、如果 PostgreSQL 已安装在其他位置
+------------------------------------------------------------
+
+编辑 backend\.env，修改 DATABASE_URL：
+  DATABASE_URL=postgresql://用户名:密码@主机:端口/数据库名
+
+六、端口冲突处理
+------------------------------------------------------------
+
+如果以下端口被占用，编辑对应配置：
+  8545 - Hardhat 链   → contracts\hardhat.config.ts
+  8080 - 后端 API     → backend\.env (PORT=8080)
+  5173 - 前端         → frontend\vite.config.ts
+  5432 - PostgreSQL   → backend\.env (DATABASE_URL)
+  5001 - IPFS         → docker\docker-compose.yml
+  6379 - Redis        → docker\docker-compose.yml

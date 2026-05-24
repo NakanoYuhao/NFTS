@@ -1,0 +1,45 @@
+============================================================
+  二创监管平台 —— 本地服务运行说明
+============================================================
+
+本目录（regulator/）包含区块链二创监管平台，需要本地运行。
+
+Coze 上部署的 AI 创作前端不会自动启动这些服务。
+
+------------------------------------------------------------
+快速启动（Windows）
+------------------------------------------------------------
+
+  powershell -ExecutionPolicy Bypass -File regulator\resume.ps1
+
+------------------------------------------------------------
+手动启动
+------------------------------------------------------------
+
+  终端 1：cd regulator\contracts && npx hardhat node
+  终端 2：cd regulator\contracts
+          npx hardhat run script/deploy.ts --network localhost
+          npx hardhat run verify-all.ts --network localhost
+          cd ..\backend
+          npx nest build && node dist/main.js && node fix-db.js
+  终端 3：cd regulator\frontend && npm run dev
+
+------------------------------------------------------------
+首次使用
+------------------------------------------------------------
+
+  1. 安装依赖：
+     cd regulator\contracts && npm install && cd ..\..
+     cd regulator\backend && npm install && npx prisma generate && cd ..\..
+     cd regulator\frontend && npm install && cd ..\..
+
+  2. 创建数据库（PostgreSQL）：
+     CREATE DATABASE nfc_registry;
+
+  3. 初始化表：
+     cd regulator\backend && npx prisma migrate dev --name init
+
+  4. 复制环境变量：
+     copy regulator\backend\.env.example regulator\backend\.env
+
+============================================================

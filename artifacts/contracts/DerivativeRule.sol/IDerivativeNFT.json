@@ -1,0 +1,50 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "IDerivativeNFT",
+  "sourceName": "contracts/DerivativeRule.sol",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "creator",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "originalContract",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "originalTokenId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "licenseId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "string",
+          "name": "metadataCid",
+          "type": "string"
+        }
+      ],
+      "name": "mintDerivative",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x",
+  "deployedBytecode": "0x",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

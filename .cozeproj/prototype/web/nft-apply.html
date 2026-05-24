@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <link href="https://lf-code-agent.coze.cn/obj/x-ai-cn/fonts/google/google-all-fonts.css" rel="stylesheet"/>
+
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/jquery/jquery-3.7.1.min.js"></script>
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/lucide/lucide-1.11.0.min.js"></script>
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/tailwindcss/tailwindcss-browser-4.2.4.min.js"></script>
+
+  <style type="text/tailwindcss">
+    @theme {
+      /* === 品牌色 === */
+      --color-primary:              #14b8a6;
+      --color-primary-container:    #ccfbf1;
+      --color-on-primary:           #ffffff;
+      --color-secondary:            #f97316;
+      --color-secondary-container:  #fff7ed;
+      --color-on-secondary:         #ffffff;
+      /* === 背景 / 表面 === */
+      --color-background:                 #ffffff;
+      --color-surface-container-lowest:   #f9fafb;
+      --color-surface:                    #ffffff;
+      --color-surface-container:          #f3f4f6;
+      --color-surface-container-high:     #e5e7eb;
+      --color-surface-container-highest:  #d1d5db;
+      /* === 文字 === */
+      --color-on-surface:           #111827;
+      --color-on-surface-variant:   #9ca3af;
+      /* === 功能色 === */
+      --color-success:  #22c55e;
+      --color-error:    #ef4444;
+      --color-warning:  #f59e0b;
+      /* === 边框 === */
+      --color-outline:          #e5e7eb;
+      --color-outline-variant:  #f3f4f6;
+      /* === 圆角 === */
+      --radius-sm:   0.375rem;
+      --radius-md:   0.5rem;
+      --radius-lg:   0.75rem;
+      --radius-xl:   1rem;
+      --radius-2xl:  1.5rem;
+      --radius-full: 9999px;
+      /* === 阴影 === */
+      --shadow-card:   0 2px 8px rgba(0,0,0,0.08);
+      --shadow-float:  0 10px 25px rgba(0,0,0,0.1);
+      --shadow-dialog: 0 25px 50px rgba(0,0,0,0.15);
+      /* === 字体 === */
+      --font-sans: "Inter", "Noto Sans SC", system-ui, sans-serif;
+    }
+  </style>
+
+  <!-- 图片兜底 -->
+  <script>
+    document.addEventListener('error', function (e) {
+      const img = e.target;
+      if (img.tagName !== 'IMG' || img.dataset.fallback) return;
+      img.dataset.fallback = '1';
+      const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const cat = img.getAttribute('data-category') || '其他';
+      const alt = img.getAttribute('alt') || '';
+      const label = esc(alt.length > 8 ? alt.slice(0, 8) + '…' : alt);
+      const icons = { '人物': '👤', '自然风景': '🏞', '动物': '🐾', '建筑城市': '🏙', '运动体育': '⚽', '交通工具': '🚗', '食物': '🍽', '服饰时尚': '👗', '商业科技': '💼', '游戏娱乐': '🎮', '艺术': '🎨', '其他': '🖼' };
+      const icon = icons[cat] || '🖼';
+      const w = img.width || 400, h = img.height || 300;
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect width="100%" height="100%" fill="%23f3f4f6"/><text x="50%" y="45%" text-anchor="middle" font-size="${Math.min(w, h) * 0.18}" dominant-baseline="central">${icon}</text><text x="50%" y="68%" text-anchor="middle" font-size="${Math.min(w, h) * 0.07}" fill="%239ca3af" font-family="system-ui,sans-serif" dominant-baseline="central">${label}</text></svg>`;
+      img.src = 'data:image/svg+xml,' + svg;
+    }, true);
+  </script>
+</head>
+
+<body class="bg-background text-on-surface font-sans">
+
+  <!-- @nav:start -->
+  <header class="bg-surface sticky top-0 z-40 border-b border-outline-variant/20 h-14 flex items-center px-4 gap-3">
+    <button id="btn-back" class="text-on-surface hover:text-on-surface/70 font-medium text-sm flex items-center gap-1">
+      <i data-lucide="arrow-left" class="w-4 h-4"></i>
+      返回
+    </button>
+    <h1 class="text-base font-bold text-on-surface">申请 NFT-ID</h1>
+  </header>
+  <!-- @nav:end -->
+
+  <!-- @main-content:start -->
+  <main class="max-w-4xl mx-auto px-4 py-6">
+
+    <!-- 藏品信息卡片 -->
+    <div class="bg-surface rounded-2xl shadow-card p-5 flex items-center gap-4 mb-8">
+      <div class="w-16 h-16 rounded-xl bg-surface-container flex items-center justify-center shrink-0 overflow-hidden">
+        <img src="https://images.unsplash.com/photo-1635322966219-b75ed372eb01" alt="潮玩藏品封面" data-category="游戏娱乐" class="w-full h-full object-cover">
+      </div>
+      <div class="min-w-0">
+        <p class="text-xs font-medium text-on-surface-variant mb-0.5">正在为以下藏品申请 NFT-ID</p>
+        <h2 class="text-base font-bold text-on-surface truncate">赛博朋克机械兔 #0042</h2>
+        <p class="text-xs text-on-surface-variant mt-0.5">藏品 ID: CPB-MR-0042</p>
+      </div>
+      <div class="ml-auto shrink-0">
+        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">待铸造</span>
+      </div>
+    </div>
+
+    <!-- 3步步骤指示器 -->
+    <div id="step-indicator" class="flex items-center justify-center mb-10">
+      <!-- 步骤1 - 当前激活 -->
+      <div class="step-item flex items-center gap-2" data-step="1">
+        <div id="step-dot-1" class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold bg-primary text-on-primary">1</div>
+        <span id="step-label-1" class="text-sm font-semibold text-primary">连接钱包</span>
+      </div>
+      <div class="w-12 h-px bg-surface-container-high mx-2"></div>
+      <!-- 步骤2 -->
+      <div class="step-item flex items-center gap-2" data-step="2">
+        <div id="step-dot-2" class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold bg-surface-container-high text-on-surface-variant">2</div>
+        <span id="step-label-2" class="text-sm font-medium text-on-surface-variant">原创声明</span>
+      </div>
+      <div class="w-12 h-px bg-surface-container-high mx-2"></div>
+      <!-- 步骤3 -->
+      <div class="step-item flex items-center gap-2" data-step="3">
+        <div id="step-dot-3" class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold bg-surface-container-high text-on-surface-variant">3</div>
+        <span id="step-label-3" class="text-sm font-medium text-on-surface-variant">铸造NFT</span>
+      </div>
+    </div>
+
+    <!-- ==================== Step 1: 连接钱包 ==================== -->
+    <div id="step-1-content" class="space-y-6">
+      <!-- 标题区 -->
+      <div class="text-center mb-8">
+        <h2 class="text-2xl font-bold text-on-surface mb-2">连接你的钱包</h2>
+        <p class="text-sm text-on-surface-variant max-w-md mx-auto leading-relaxed">NFT将铸造到你的钱包地址。私钥只在你的设备上生成，永远不会经过我们的服务器。</p>
+      </div>
+
+      <!-- 未连接状态 - 连接钱包按钮 -->
+      <div id="wallet-unconnected" class="flex flex-col items-center gap-6">
+        <button id="btn-connect-wallet" class="w-full max-w-sm bg-primary text-on-primary px-6 py-3.5 rounded-xl text-base font-semibold hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center justify-center gap-2 shadow-card">
+          <i data-lucide="wallet" class="w-5 h-5"></i>
+          连接钱包
+        </button>
+
+        <!-- 分隔线 -->
+        <div class="flex items-center gap-4 w-full max-w-sm">
+          <div class="flex-1 h-px bg-outline-variant/30"></div>
+          <span class="text-xs font-medium text-on-surface-variant">或者</span>
+          <div class="flex-1 h-px bg-outline-variant/30"></div>
+        </div>
+
+        <!-- 创建新钱包 -->
+        <button id="btn-create-wallet" class="w-full max-w-sm bg-surface border-2 border-secondary/30 rounded-xl p-4 text-left hover:border-secondary/60 hover:shadow-card transition-all group">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-secondary/10 flex items-center justify-center shrink-0">
+              <i data-lucide="plus-circle" class="w-5 h-5 text-secondary"></i>
+            </div>
+            <div>
+              <p class="text-sm font-semibold text-on-surface group-hover:text-secondary transition-colors">创建新钱包 (MetaMask)</p>
+              <p class="text-xs text-on-surface-variant mt-0.5">私钥仅在您的设备本地生成，永远不经过服务器</p>
+            </div>
+          </div>
+        </button>
+      </div>
+
+      <!-- 已连接状态卡片（默认隐藏） -->
+      <div id="wallet-connected" class="hidden">
+        <div class="w-full max-w-md mx-auto bg-primary/10 border-2 border-primary/30 rounded-2xl p-5">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+              <i data-lucide="check-circle" class="w-5 h-5 text-primary"></i>
+            </div>
+            <div>
+              <p class="text-sm font-semibold text-primary">钱包已连接</p>
+              <p id="wallet-address" class="text-xs text-on-surface-variant font-mono mt-0.5">0x7a3B...f9E2</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-primary/20 text-primary font-medium">
+              <i data-lucide="shield-check" class="w-3 h-3"></i>
+              已验证
+            </span>
+            <button id="btn-disconnect" class="ml-auto text-xs font-medium text-on-surface-variant hover:text-error transition-colors inline-flex items-center gap-1">
+              <i data-lucide="unplug" class="w-3.5 h-3.5"></i>
+              断开连接
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== Step 2: 原创声明（默认隐藏） ==================== -->
+    <div id="step-2-content" class="hidden space-y-6">
+      <div class="text-center mb-8">
+        <h2 class="text-2xl font-bold text-on-surface mb-2">原创声明</h2>
+        <p class="text-sm text-on-surface-variant max-w-md mx-auto leading-relaxed">请仔细阅读并勾选以下声明，确认你对藏品的原创性和所有权。</p>
+      </div>
+
+      <div class="max-w-md mx-auto space-y-4">
+        <!-- 声明1 -->
+        <label id="declare-original" class="flex items-start gap-3 bg-surface rounded-xl shadow-card p-4 cursor-pointer hover:shadow-float transition-all border-2 border-transparent has-[:checked]:border-primary/30">
+          <input type="checkbox" class="mt-0.5 w-5 h-5 rounded accent-primary shrink-0" />
+          <div>
+            <p class="text-sm font-semibold text-on-surface">原创性声明</p>
+            <p class="text-xs text-on-surface-variant mt-1 leading-relaxed">我声明该藏品为我本人原创创作，未抄袭、盗用或侵权他人作品，所有创意元素均来自本人独立构思。</p>
+          </div>
+        </label>
+
+        <!-- 声明2 -->
+        <label id="declare-ownership" class="flex items-start gap-3 bg-surface rounded-xl shadow-card p-4 cursor-pointer hover:shadow-float transition-all border-2 border-transparent has-[:checked]:border-primary/30">
+          <input type="checkbox" class="mt-0.5 w-5 h-5 rounded accent-primary shrink-0" />
+          <div>
+            <p class="text-sm font-semibold text-on-surface">所有权声明</p>
+            <p class="text-xs text-on-surface-variant mt-1 leading-relaxed">我声明对该藏品拥有完整的知识产权和所有权，有权将其铸造为NFT并进行相关交易。</p>
+          </div>
+        </label>
+
+        <!-- 声明3 -->
+        <label id="declare-accuracy" class="flex items-start gap-3 bg-surface rounded-xl shadow-card p-4 cursor-pointer hover:shadow-float transition-all border-2 border-transparent has-[:checked]:border-primary/30">
+          <input type="checkbox" class="mt-0.5 w-5 h-5 rounded accent-primary shrink-0" />
+          <div>
+            <p class="text-sm font-semibold text-on-surface">准确性声明</p>
+            <p class="text-xs text-on-surface-variant mt-1 leading-relaxed">我声明所提交的藏品信息（名称、描述、图片等）均真实准确，不存在虚假或误导性内容。</p>
+          </div>
+        </label>
+      </div>
+
+      <div class="max-w-md mx-auto pt-4">
+        <button id="btn-mint-apply" class="w-full bg-primary text-on-primary px-6 py-3.5 rounded-xl text-base font-semibold hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center justify-center gap-2 shadow-card opacity-50 cursor-not-allowed" disabled>
+          <i data-lucide="file-check" class="w-5 h-5"></i>
+          申请铸造 NFT-ID
+        </button>
+        <p class="text-xs text-on-surface-variant text-center mt-2">请先勾选所有声明项</p>
+      </div>
+    </div>
+
+    <!-- ==================== Step 3: 铸造成功（默认隐藏） ==================== -->
+    <div id="step-3-content" class="hidden">
+      <div class="text-center py-8">
+        <div class="w-20 h-20 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-5">
+          <i data-lucide="badge-check" class="w-10 h-10 text-success"></i>
+        </div>
+        <h2 class="text-2xl font-bold text-on-surface mb-2">NFT 铸造成功！</h2>
+        <p class="text-sm text-on-surface-variant mb-6">你的藏品已成功铸造为链上 NFT，以下是铸造信息：</p>
+
+        <div class="max-w-md mx-auto bg-surface rounded-2xl shadow-card p-5 text-left space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs text-on-surface-variant">NFT ID</span>
+            <span class="text-sm font-bold text-primary font-mono">CPB-MR-0042</span>
+          </div>
+          <div class="h-px bg-outline-variant/20"></div>
+          <div class="flex items-center justify-between">
+            <span class="text-xs text-on-surface-variant">合约地址</span>
+            <span class="text-xs font-mono text-on-surface">0x1a2B...c8D4</span>
+          </div>
+          <div class="h-px bg-outline-variant/20"></div>
+          <div class="flex items-center justify-between">
+            <span class="text-xs text-on-surface-variant">Token ID</span>
+            <span class="text-xs font-mono text-on-surface">#0042</span>
+          </div>
+          <div class="h-px bg-outline-variant/20"></div>
+          <div class="flex items-center justify-between">
+            <span class="text-xs text-on-surface-variant">铸造时间</span>
+            <span class="text-xs text-on-surface">2024-12-20 14:32</span>
+          </div>
+          <div class="h-px bg-outline-variant/20"></div>
+          <div class="flex items-center justify-between">
+            <span class="text-xs text-on-surface-variant">链网络</span>
+            <span class="text-xs text-on-surface">Ethereum Mainnet</span>
+          </div>
+        </div>
+
+        <div class="max-w-md mx-auto mt-6 flex gap-3">
+          <button id="btn-view-nft" class="flex-1 bg-primary text-on-primary px-4 py-3 rounded-xl text-sm font-semibold hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center justify-center gap-2">
+            <i data-lucide="external-link" class="w-4 h-4"></i>
+            查看NFT
+          </button>
+          <button id="btn-back-home" class="flex-1 bg-surface-container text-on-surface px-4 py-3 rounded-xl text-sm font-semibold hover:bg-surface-container-high active:scale-[0.98] transition-all inline-flex items-center justify-center gap-2">
+            <i data-lucide="home" class="w-4 h-4"></i>
+            返回首页
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 底部下一步按钮 -->
+    <div id="step-1-footer" class="mt-10 pt-6 border-t border-outline-variant/20">
+      <button id="btn-next-step" class="w-full max-w-sm mx-auto block bg-primary text-on-primary px-6 py-3.5 rounded-xl text-base font-semibold hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center justify-center gap-2 opacity-50 cursor-not-allowed" disabled>
+        下一步：原创声明
+        <i data-lucide="arrow-right" class="w-4 h-4"></i>
+      </button>
+      <p id="next-step-hint" class="text-xs text-on-surface-variant text-center mt-2">请先连接钱包后继续</p>
+    </div>
+
+  </main>
+  <!-- @main-content:end -->
+
+  <!-- 钱包选择弹窗 -->
+  <div id="wallet-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-surface rounded-2xl shadow-dialog max-w-sm w-full overflow-hidden">
+      <!-- 弹窗头部 -->
+      <div class="flex items-center justify-between px-5 pt-5 pb-3">
+        <h3 class="text-lg font-bold text-on-surface">连接钱包</h3>
+        <button id="btn-close-modal" class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="px-5 pb-2">
+        <p class="text-xs text-on-surface-variant">选择你的钱包以连接到 NFT 潮玩创作平台</p>
+      </div>
+
+      <!-- 钱包列表 -->
+      <div class="px-5 py-3 space-y-2.5">
+        <!-- 钱包选项1 - MetaMask -->
+        <button class="wallet-option w-full flex items-center gap-3 p-3.5 rounded-xl border-2 border-outline-variant/20 hover:border-primary/40 hover:shadow-card transition-all group text-left" data-wallet="metamask">
+          <div class="w-10 h-10 rounded-lg bg-secondary/10 flex items-center justify-center shrink-0">
+            <i data-lucide="fox" class="w-5 h-5 text-secondary"></i>
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="text-sm font-semibold text-on-surface group-hover:text-primary transition-colors">MetaMask</p>
+            <p class="text-xs text-on-surface-variant">点击连接</p>
+          </div>
+          <i data-lucide="chevron-right" class="w-4 h-4 text-on-surface-variant/50 shrink-0"></i>
+        </button>
+
+        <!-- 钱包选项2 - WalletConnect -->
+        <button class="wallet-option w-full flex items-center gap-3 p-3.5 rounded-xl border-2 border-outline-variant/20 hover:border-primary/40 hover:shadow-card transition-all group text-left" data-wallet="walletconnect">
+          <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+            <i data-lucide="scan-line" class="w-5 h-5 text-primary"></i>
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="text-sm font-semibold text-on-surface group-hover:text-primary transition-colors">WalletConnect</p>
+            <p class="text-xs text-on-surface-variant">扫码连接</p>
+          </div>
+          <i data-lucide="chevron-right" class="w-4 h-4 text-on-surface-variant/50 shrink-0"></i>
+        </button>
+
+        <!-- 钱包选项3 - Coinbase Wallet -->
+        <button class="wallet-option w-full flex items-center gap-3 p-3.5 rounded-xl border-2 border-outline-variant/20 hover:border-primary/40 hover:shadow-card transition-all group text-left" data-wallet="coinbase">
+          <div class="w-10 h-10 rounded-lg bg-warning/10 flex items-center justify-center shrink-0">
+            <i data-lucide="circle-dollar-sign" class="w-5 h-5 text-warning"></i>
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="text-sm font-semibold text-on-surface group-hover:text-primary transition-colors">Coinbase Wallet</p>
+            <p class="text-xs text-on-surface-variant">点击连接</p>
+          </div>
+          <i data-lucide="chevron-right" class="w-4 h-4 text-on-surface-variant/50 shrink-0"></i>
+        </button>
+
+        <!-- 钱包选项4 - Rainbow -->
+        <button class="wallet-option w-full flex items-center gap-3 p-3.5 rounded-xl border-2 border-outline-variant/20 hover:border-primary/40 hover:shadow-card transition-all group text-left" data-wallet="rainbow">
+          <div class="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center shrink-0">
+            <i data-lucide="rainbow" class="w-5 h-5 text-success"></i>
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="text-sm font-semibold text-on-surface group-hover:text-primary transition-colors">Rainbow</p>
+            <p class="text-xs text-on-surface-variant">点击连接</p>
+          </div>
+          <i data-lucide="chevron-right" class="w-4 h-4 text-on-surface-variant/50 shrink-0"></i>
+        </button>
+      </div>
+
+      <!-- WalletConnect 二维码区域（默认隐藏） -->
+      <div id="wc-qr-section" class="hidden px-5 pb-4">
+        <div class="bg-surface-container rounded-xl p-4 text-center">
+          <div class="w-40 h-40 mx-auto bg-white rounded-lg flex items-center justify-center mb-3 border border-outline-variant/20">
+            <!-- 模拟二维码占位 -->
+            <div class="grid grid-cols-8 gap-0.5 w-32 h-32">
+              <!-- 列表-二维码格子行1 -->
+              <div class="bg-on-surface rounded-sm"></div><div class="bg-on-surface rounded-sm"></div><div class="bg-on-surface rounded-sm"></div><div class="bg-white rounded-sm"></div><div class="bg-on-surface rounded-sm"></div><div class="bg-on-surface rounded-sm"></div><div class="bg-white rounded-sm"></div><div class="bg-on-surface rounded-sm"></div>
+              <!-- 列表-二维码格子行2 -->
+              <div class="bg-on-surface rounded-sm"></div><div class="bg-white rounded-sm"></div><div class="bg-on-surface rounded-sm"></div><div class="bg-on-surface rounded-sm"></div><div class="bg-white rounded-sm"></div><div class="bg-on-surface rounded-sm"></div><div class="bg-on-surface rounded-sm"></div><div class="bg-white rounded-sm"></div>
+              <!-- 列表-二维码格子行3 -->
+              <div class="bg-white rounded-sm"></div><div class="bg-on-surface rounded-sm"></div><div class="bg-on-surface rounded-sm"></div><div class="bg-on-surface rounded-sm"></div><div class="bg-on-surface rounded-sm"></div><div class="bg-white rounded-sm"></div><div class="bg-on-surface rounded-sm"></div><div class="bg-on-surface rounded-sm"></div>
+              <!-- 列表-二维码格子行4 -->
+              <div class="bg-on-surface rounded-sm"></div><div class="bg-white rounded-sm"></div><div class="bg-white rounded-sm"></div><div class="bg-on-surface rounded-sm"></div><div class="bg-white rounded-sm"></div><div class="bg-on-surface rounded-sm"></div><div class="bg-on-surface rounded-sm"></div><div class="bg-on-surface rounded-sm"></div>
+              <!-- 列表-二维码格子行5 -->
+              <div class="bg-on-surface rounded-sm"></div><div class="bg-on-surface rounded-sm"></div><div class="bg-on-surface rounded-sm"></div><div class="bg-white rounded-sm"></div><div class="bg-on-surface rounded-sm"></div><div class="bg-white rounded-sm"></div><div class="bg-white rounded-sm"></div><div class="bg-on-surface rounded-sm"></div>
+              <!-- 列表-二维码格子行6 -->
+              <div class="bg-white rounded-sm"></div><div class="bg-on-surface rounded-sm"></div><div class="bg-on-surface rounded-sm"></div><div class="bg-on-surface rounded-sm"></div><div class="bg-on-surface rounded-sm"></div><div class="bg-on-surface rounded-sm"></div><div class="bg-on-surface rounded-sm"></div><div class="bg-white rounded-sm"></div>
+              <!-- 列表-二维码格子行7 -->
+              <div class="bg-on-surface rounded-sm"></div><div class="bg-white rounded-sm"></div><div class="bg-on-surface rounded-sm"></div><div class="bg-on-surface rounded-sm"></div><div class="bg-white rounded-sm"></div><div class="bg-on-surface rounded-sm"></div><div class="bg-on-surface rounded-sm"></div><div class="bg-on-surface rounded-sm"></div>
+              <!-- 列表-二维码格子行8 -->
+              <div class="bg-on-surface rounded-sm"></div><div class="bg-on-surface rounded-sm"></div><div class="bg-white rounded-sm"></div><div class="bg-on-surface rounded-sm"></div><div class="bg-on-surface rounded-sm"></div><div class="bg-white rounded-sm"></div><div class="bg-on-surface rounded-sm"></div><div class="bg-white rounded-sm"></div>
+            </div>
+          </div>
+          <p class="text-xs text-on-surface-variant">使用 WalletConnect App 扫描二维码连接</p>
+        </div>
+      </div>
+
+      <!-- 弹窗底部提示 -->
+      <div class="px-5 py-4 bg-surface-container-lowest border-t border-outline-variant/20">
+        <p class="text-xs text-on-surface-variant text-center">首次使用？<button id="btn-learn-more" class="text-primary font-medium hover:underline">了解更多关于钱包</button></p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    $(function () {
+      let currentStep = 1;
+      let walletConnected = false;
+
+      // === 弹窗控制 ===
+      // 点击"连接钱包"按钮 - 显示钱包选择弹窗
+      $('#btn-connect-wallet').on('click', function () {
+        $('#wallet-modal').removeClass('hidden');
+      });
+
+      // 关闭弹窗
+      $('#btn-close-modal').on('click', function () {
+        $('#wallet-modal').addClass('hidden');
+        $('#wc-qr-section').addClass('hidden');
+      });
+
+      // 点击弹窗背景关闭
+      $('#wallet-modal').on('click', function (e) {
+        if ($(e.target).is('#wallet-modal')) {
+          $('#wallet-modal').addClass('hidden');
+          $('#wc-qr-section').addClass('hidden');
+        }
+      });
+
+      // === 钱包选项点击 ===
+      // WalletConnect - 显示二维码
+      $('.wallet-option[data-wallet="walletconnect"]').on('click', function () {
+        $('#wc-qr-section').toggleClass('hidden');
+      });
+
+      // 其他钱包 - 模拟连接
+      $('.wallet-option').not('[data-wallet="walletconnect"]').on('click', function () {
+        const walletName = $(this).data('wallet');
+        connectWallet(walletName);
+      });
+
+      // WalletConnect 二维码区域点击后也模拟连接
+      // 后续应实现：1.轮询 WalletConnect session 状态 2. 检测到连接成功后自动关闭弹窗并更新UI
+      $('#wc-qr-section').on('click', function () {
+        connectWallet('walletconnect');
+      });
+
+      // === 连接钱包逻辑 ===
+      function connectWallet(walletType) {
+        // 模拟连接过程 - 关闭弹窗，显示已连接状态
+        $('#wallet-modal').addClass('hidden');
+        $('#wc-qr-section').addClass('hidden');
+        walletConnected = true;
+
+        // 切换显示状态
+        $('#wallet-unconnected').addClass('hidden');
+        $('#wallet-connected').removeClass('hidden');
+
+        // 启用下一步按钮
+        $('#btn-next-step').removeClass('opacity-50 cursor-not-allowed').prop('disabled', false);
+        $('#next-step-hint').text('钱包已连接，可以继续下一步');
+      }
+
+      // === 断开连接 ===
+      $('#btn-disconnect').on('click', function () {
+        walletConnected = false;
+        $('#wallet-unconnected').removeClass('hidden');
+        $('#wallet-connected').addClass('hidden');
+        $('#btn-next-step').addClass('opacity-50 cursor-not-allowed').prop('disabled', true);
+        $('#next-step-hint').text('请先连接钱包后继续');
+      });
+
+      // === 步骤切换 ===
+      $('#btn-next-step').on('click', function () {
+        if (!walletConnected) return;
+        goToStep(2);
+      });
+
+      // Step 2 声明勾选检查
+      $('#step-2-content input[type="checkbox"]').on('change', function () {
+        const allChecked = $('#step-2-content input[type="checkbox"]').length ===
+                           $('#step-2-content input[type="checkbox"]:checked').length;
+        if (allChecked) {
+          $('#btn-mint-apply').removeClass('opacity-50 cursor-not-allowed').prop('disabled', false);
+          $('#btn-mint-apply').next('p').text('所有声明已确认，可以申请铸造');
+        } else {
+          $('#btn-mint-apply').addClass('opacity-50 cursor-not-allowed').prop('disabled', true);
+          $('#btn-mint-apply').next('p').text('请先勾选所有声明项');
+        }
+      });
+
+      // 申请铸造按钮 - 进入Step3
+      $('#btn-mint-apply').on('click', function () {
+        if ($(this).prop('disabled')) return;
+        goToStep(3);
+      });
+
+      // === 步骤指示器更新 ===
+      function goToStep(step) {
+        currentStep = step;
+
+        // 隐藏所有步骤内容
+        $('#step-1-content').addClass('hidden');
+        $('#step-2-content').addClass('hidden');
+        $('#step-3-content').addClass('hidden');
+        $('#step-1-footer').addClass('hidden');
+
+        // 显示对应步骤内容
+        if (step === 1) {
+          $('#step-1-content').removeClass('hidden');
+          $('#step-1-footer').removeClass('hidden');
+        } else if (step === 2) {
+          $('#step-2-content').removeClass('hidden');
+        } else if (step === 3) {
+          $('#step-3-content').removeClass('hidden');
+        }
+
+        // 更新步骤指示器
+        for (let i = 1; i <= 3; i++) {
+          const dot = $('#step-dot-' + i);
+          const label = $('#step-label-' + i);
+          if (i < step) {
+            // 已完成
+            dot.html('<i data-lucide="check" class="w-4 h-4"></i>');
+            dot.removeClass('bg-surface-container-high text-on-surface-variant bg-primary text-on-primary').addClass('bg-primary text-on-primary');
+            label.removeClass('text-on-surface-variant').addClass('text-primary font-semibold');
+          } else if (i === step) {
+            // 当前步骤
+            dot.text(i);
+            dot.removeClass('bg-surface-container-high text-on-surface-variant').addClass('bg-primary text-on-primary');
+            label.removeClass('text-on-surface-variant').addClass('text-primary font-semibold');
+          } else {
+            // 未到达
+            dot.text(i);
+            dot.removeClass('bg-primary text-on-primary').addClass('bg-surface-container-high text-on-surface-variant');
+            label.removeClass('text-primary font-semibold').addClass('text-on-surface-variant');
+          }
+        }
+
+        // 重新渲染 Lucide 图标（步骤指示器中的check图标）
+        lucide.createIcons();
+      }
+
+      // === 返回按钮 ===
+      $('#btn-back').on('click', function () {
+        // 后续应实现：返回藏品详情页
+        window.history.back();
+      });
+
+      // === 创建新钱包按钮 ===
+      // 后续应实现：1.跳转至MetaMask下载页面或打开MetaMask创建流程 2. 创建完成后自动触发连接
+      $('#btn-create-wallet').on('click', function () {
+        console.log('创建新钱包 - 应跳转至MetaMask下载/创建流程');
+        // 模拟直接连接
+        connectWallet('metamask-new');
+      });
+
+      // === 查看NFT ===
+      // 后续应实现：跳转到NFT详情页或区块链浏览器
+      $('#btn-view-nft').on('click', function () {
+        console.log('查看NFT - 应跳转到NFT详情页或Etherscan');
+      });
+
+      // === 返回首页 ===
+      $('#btn-back-home').on('click', function () {
+        // 后续应实现：跳转回首页
+        console.log('返回首页 - 应跳转回应用首页');
+      });
+
+      // === 了解更多 ===
+      $('#btn-learn-more').on('click', function () {
+        console.log('了解更多关于钱包 - 应打开帮助文档');
+      });
+    });
+  </script>
+
+  <script>lucide.createIcons();</script>
+</body>
+
+</html>

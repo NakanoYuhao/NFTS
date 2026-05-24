@@ -1,0 +1,19 @@
+# VPS 专用 Dockerfile — 构建上下文为 /opt/nfc-platform
+# 用法: docker build -f regulator/docker/Dockerfile.backend.vps -t nfc-backend .
+
+FROM node:20-alpine AS builder
+WORKDIR /app
+COPY regulator/backend/package.json regulator/backend/package-lock.json* ./
+RUN npm ci --ignore-scripts
+COPY regulator/backend/ .
+RUN npx prisma generate
+RUN npm run build
+
+FROM node:20-alpine
+WORKDIR /app
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/prisma ./prisma
+EXPOSE 8080
+CMD ["sh", "-c", "npx prisma migrate deploy --schema=./prisma/schema.prisma && node dist/main.js"]

@@ -1,0 +1,19 @@
+[profile.default]
+src = "src"
+out = "out"
+libs = ["lib"]
+solc = "0.8.24"
+evm_version = "paris"
+remappings = [
+    "@openzeppelin/=lib/openzeppelin-contracts/",
+]
+
+[rpc_endpoints]
+fisco_local = "http://127.0.0.1:8545"
+polygon_mumbai = "https://rpc-mumbai.maticvigil.com"
+
+[etherscan]
+polygon_mumbai = { key = "${POLYGONSCAN_API_KEY}" }
+
+[fuzz]
+runs = 256
